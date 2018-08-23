@@ -29,5 +29,4 @@ class ZMQPublisher(Publisher):
         return cls(get_publish_sock(addr))
 
     def pub(self, content):
-        # self.socket.send_string(content)
         self.socket.send_multipart([content])

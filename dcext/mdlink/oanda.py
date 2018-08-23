@@ -10,7 +10,8 @@ import os
 
 
 PUBSOCK = os.environ.get("OANDA_PUBSOCK", "tcp://*:10004")
-
+TRADE_TYPE = os.environ.get("ONADA_TYPE", "PRACTICE")
+TIMEZONE = int(os.environ.get("TIMEZONE", "8"))
 
 FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
 PRICES = ["open", "high", "low", "close", 'volume']
@@ -18,6 +19,7 @@ PRICE = "price"
 LIQUIDITY = "liquidity"
 ZERO_QUOTE = ["turnover", "interest", "settle", "delta", "iopv", "avgbidpx", "totbidvol", "avgaskpx", "totaskvol", "vwap"]
 ZERO_QS = ["uplimit", "downlimit", "preinterest", "preclose", "presettle", "predelta"]
+
 
 
 def make_ind(price, candle):
@@ -33,7 +35,7 @@ def make_ind(price, candle):
     askbid(ab.askPrice, ab.askVolume, price["asks"])
     askbid(ab.bidPrice, ab.bidVolume, price["bids"])
 
-    dt = datetime.strptime(price["time"][:26], FORMAT) + timedelta(hours=8)
+    dt = datetime.strptime(price["time"][:26], FORMAT) + timedelta(hours=TIMEZONE)
     date = dt.year*10000+dt.month*100+dt.day
     millionsecond = (dt.hour*3600+dt.minute*60+dt.second)*1000+int(dt.microsecond/1000)
     
@@ -110,56 +112,19 @@ class OandaZMQCore(Core):
             self.publisher.pub(message)
 
 
-def run(addr, token, insts, sleep=10):
+def run(addr, token, insts, sleep=10, trade_type="PRACTICE"):
     if isinstance(insts, str):
         insts = insts.split(",")
     publisher = ZMQPublisher.from_addr(addr)
-    stream = OandaStream.conf(token, insts, sleep=sleep)
+    stream = OandaStream.conf(token, insts, sleep=sleep, trade_type=trade_type)
     core = OandaZMQCore(stream, publisher)
     core.start()
-
-
-def test():
-    instruments.init()
-    p = {
-        "type": "PRICE",
-        "time": "2018-08-20T04:37:12.967767165Z",
-        "bids": [
-        {
-            "price": "1.14298",
-            "liquidity": 10000000
-        }
-        ],
-        "asks": [
-        {
-            "price": "1.14313",
-            "liquidity": 10000000
-        }
-        ],
-        "closeoutBid": "1.14283",
-        "closeoutAsk": "1.14328",
-        "status": "tradeable",
-        "tradeable": True,
-        "instrument": "EUR_USD"
-    }
-    c = {
-        "open": 1.14395,
-        "high": 1.14409,
-        "close": 1.14305,
-        "low": 1.14267,
-        "volume": 6061,
-        "instrument": "EUR_USD"
-    }
-
-    msg = make_msg(make_ind(p, c))
-    print(msg)
-    print(msg_string(msg))
 
 
 def command():
     from dcext.oanda.api import TOKEN
     instruments.init()
-    run(PUBSOCK, TOKEN, instruments.find(14))
+    run(PUBSOCK, TOKEN, instruments.find(14), trade_type=TRADE_TYPE)
 
     
 if __name__ == '__main__':

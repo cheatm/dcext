@@ -1,0 +1,13 @@
+version: '3'
+services:
+  oanda: 
+    container_name: dcext_oanda
+    build: .
+    image: "dcext"
+    network_mode: "host"
+    command: "python dcext/mdlink/oanda.py"
+    environment:
+      OANDA_ACCOUNTID: ""
+      OANDA_TOKEN: ""
+      ETC_PATH: "/app/etc"
+      

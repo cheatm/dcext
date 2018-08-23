@@ -8,11 +8,10 @@ class OandaPriceStream(Stream):
 
     TYPES = {"PRICE": MESSAGE, "HEARTBEAT": LOG}
 
-    def __init__(self, token, instruments, accountID=None):
-        self.token = token
-        self.accountID = accountID
+    def __init__(self, api, instruments, accountID):
         self.instruments = instruments
-        self.api = api.OandaAPI(self.token)
+        self.api = api
+        self.accountID = accountID
 
     def get_accountID(self):
         if self.accountID:
@@ -51,10 +50,9 @@ class OandaCandleUpdater(object):
         "volume": "volume"
     }
 
-    def __init__(self, token, instruments):
-        self.token = token
+    def __init__(self, api, instruments):
+        self.api = api
         self.instruments = instruments
-        self.api = api.OandaAPI(self.token)
         self.query = {
             "count": 2, "granularity": "D", "candleFormat": "midpoint"
         }
@@ -103,10 +101,11 @@ class OandaStream(Stream):
         }
     
     @classmethod
-    def conf(cls, token, instruments, accountID=None, sleep=10):
+    def conf(cls, token, instruments, accountID=None, sleep=10, trade_type=api.PRACTICE):
         assert isinstance(instruments, list)
-        stream = OandaPriceStream(token, instruments, accountID)
-        candle = OandaCandleUpdater(token, instruments)
+        _api = api.OandaAPI(token, trade_type=trade_type)
+        stream = OandaPriceStream(_api, instruments, accountID)
+        candle = OandaCandleUpdater(_api, instruments)
         return cls(stream, candle, sleep)
 
     def price_stream(self):
@@ -242,38 +241,3 @@ def main():
         count += 1
         if count > 5:
             pos.stop()
-
-
-if __name__ == '__main__':
-    # main()
-    instruments.init()
-    p = {
-        "type": "PRICE",
-        "time": "2018-08-20T04:37:12.967767165Z",
-        "bids": [
-        {
-            "price": "1.14298",
-            "liquidity": 10000000
-        }
-        ],
-        "asks": [
-        {
-            "price": "1.14313",
-            "liquidity": 10000000
-        }
-        ],
-        "closeoutBid": "1.14283",
-        "closeoutAsk": "1.14328",
-        "status": "tradeable",
-        "tradeable": True,
-        "instrument": "EUR_USD"
-    }
-    c = {
-        "open": 1.14395,
-        "high": 1.14409,
-        "close": 1.14305,
-        "low": 1.14267,
-        "volume": 6061,
-        "instrument": "EUR_USD"
-    }
-    main()

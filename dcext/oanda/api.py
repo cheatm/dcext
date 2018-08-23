@@ -22,6 +22,10 @@ HEADER = {
 }
 
 
+TRADE = "TRADE"
+PRACTICE = "PRACTICE"
+
+
 def make_url(home, tag, query=None, formats=None):
     if not isinstance(formats, dict):
         formats = {}
@@ -38,15 +42,21 @@ def make_url(home, tag, query=None, formats=None):
 
 class OandaAPI(object):
 
-    def __init__(self, token):
+    REST = REST_PRACTICE
+    STREAM = STREAM_PRACTICE
+
+    def __init__(self, token, trade_type=PRACTICE):
         self.token = token
         self.headers = {
             "Authorization": "Bearer %s" % self.token,
             "Content-Type": "application/json"
         }
+        if trade_type == TRADE:
+            self.REST = REST_TRADE
+            self.STREAM = STREAM_TRADE
 
     def get(self, tag, query=None, **kwargs):
-        URL = make_url(REST_PRACTICE, tag, query, kwargs)
+        URL = make_url(self.REST, tag, query, kwargs)
         response = requests.get(URL, headers=self.headers, timeout=20)
         if response.status_code == 200:
             return response.content
@@ -54,7 +64,7 @@ class OandaAPI(object):
             raise requests.HTTPError(response.status_code, response.content)
 
     def stream(self, tag, query=None, **kwargs):
-        URL = make_url(STREAM_PRACTICE, tag, query, kwargs)
+        URL = make_url(self.STREAM, tag, query, kwargs)
         response = requests.get(URL, headers=self.headers, stream=True)
         if response.status_code:
             yield from response.iter_lines()
