@@ -2,3 +2,4 @@ requests
 pyzmq
 protobuf==3.6.1
 pandas==0.20.0
+pymongo

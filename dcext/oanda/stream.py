@@ -8,7 +8,7 @@ class OandaPriceStream(Stream):
 
     TYPES = {"PRICE": MESSAGE, "HEARTBEAT": LOG}
 
-    def __init__(self, api, instruments, accountID):
+    def __init__(self, api, instruments, accountID=None):
         self.instruments = instruments
         self.api = api
         self.accountID = accountID
@@ -176,68 +176,3 @@ class OandaStream(Stream):
             else:
                 if result:
                     yield TAG, result
-            
-
-from dcext.proto.md_pb2 import MarketDataInd, MarketQuote, AskBid, QuoteStatic, MD_FUT_L1
-from datetime import datetime
-from dcext import instruments
-
-
-FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
-PRICES = ["open", "high", "low", "close", 'volume']
-PRICE = "price"
-LIQUIDITY = "liquidity"
-ZERO_QUOTE = ["turnover", "interest", "settle", "delta", "iopv", "avgbidpx", "totbidvol", "avgaskpx", "totaskvol", "vwap"]
-ZERO_QS = ["uplimit", "downlimit", "preinterest", "preclose", "presettle", "predelta"]
-
-
-def make_ind(price, candle):
-    ind = MarketDataInd()
-    ind.type = MD_FUT_L1
-    quote = ind.fut
-    ab = quote.ab
-    qs = quote.qs
-
-    fill_zero(qs, ZERO_QS)
-    fill_zero(quote, ZERO_QUOTE)
-
-    askbid(ab.askPrice, ab.askVolume, price["asks"])
-    askbid(ab.bidPrice, ab.bidVolume, price["bids"])
-
-    dt = datetime.strptime(price["time"][:26], FORMAT)
-    date = dt.year*10000+dt.month*100+dt.day
-    millionsecond = (dt.second*3600+dt.minute*60+dt.second)*1000+int(dt.microsecond/1000)
-    
-    qs.date = date
-    qs.tradeday=date
-    
-    quote.time = millionsecond
-    quote.jzcode = instruments.jzcode(price["instrument"])
-    for name in PRICES:
-        setattr(quote, name, candle[name])
-    quote.last = quote.close
-    return ind
-
-
-def askbid(price, volume, pairs):
-    for doc in pairs:
-        price.append(float(doc[PRICE]))
-        volume.append(doc[LIQUIDITY])
-
-
-def fill_zero(proto, names):
-    for name in names:
-        setattr(proto, name, 0)
-
-
-def main():
-    instruments.init()
-    pos = OandaStream.conf(api.TOKEN, ["EUR_USD", "AUD_JPY"])
-    pos.start()
-    count = 0
-    for tag, data in pos:
-        
-        print(tag, data)
-        count += 1
-        if count > 5:
-            pos.stop()
