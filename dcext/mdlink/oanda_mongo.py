@@ -35,6 +35,7 @@ class OandaStreamPublisher(Publisher):
         assert isinstance(stream, OandaPriceStream)
         self.stream = stream
         self.tz = timezone(timedelta(hours=tz))
+        self.count = 0
     
     def __iter__(self):
         for _type, _msg in self.stream:
@@ -45,8 +46,10 @@ class OandaStreamPublisher(Publisher):
                     logging.error("oanda stream | %s | %s", _msg, e)
                 else:
                     yield TICK_STREAM, message
+                    self.count += 1
             else:
-                logging.warning("oanda stream log | %s", _msg)
+                logging.warning("oanda stream log | received %s | %s", self.count, _msg)
+                self.count = 0
 
     def decorate(self, msg):
         doc = {}
@@ -165,7 +168,6 @@ class BarsInstance(object):
                 logging.error("transform tick | %s | %s", tick, e)
         return results
             
-
     def __getitem__(self, key):
         inst, gran = self.split_key(key)
         return self.bars[inst][gran]
