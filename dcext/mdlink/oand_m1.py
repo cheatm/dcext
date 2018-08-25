@@ -13,7 +13,7 @@ def get_dt(date, tz=None):
         return get_dt(str(date), tz)
     elif isinstance(date, str):
         return datetime.strptime(date.replace("-", ""), "%Y%m%d").replace(tzinfo=tz)
-    elif isinstance(datetime, date):
+    elif isinstance(date, datetime):
         return date.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=tz)
     else:
         raise TypeError("Not supported type: %s" % type(date))
