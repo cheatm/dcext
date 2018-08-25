@@ -169,7 +169,7 @@ class Framework(object):
     def create(self, instruments, start, end):
         dates = pd.date_range(get_dt(start), get_dt(end)).map(lambda t: t.year*10000+t.month*100+t.day)
         for i, d in product(instruments, dates):
-            r = self.storage.create(i, d)
+            r = self.storage.create(i, int(d))
             logging.warning("create log | %s | %s | %s", i, d, r)
     
     def publish(self, instruments=None, start=None, end=None, filled=False, redo=3):
@@ -214,6 +214,63 @@ class Framework(object):
         else:
             logging.warning("download bar | %s | %s | fill: %s, count: %s", instrument, date, fill, count)
             return 1
+
+
+def init_from_config(filename):
+    with open(filename) as f:
+        conf = json.load(f)
+    api = API(conf.get("token", None))
+    storage = MongodbStorage(**conf.get("storage", {}))
+    fw = Framework(api, storage, conf.get("ltz", 8))
+    return fw
+
+
+def run(command, instruments, start, end, filled=False, redo=3, config_file="oanda_m1.json"):
+    fw = init_from_config(filename)
+    if command == "create":
+        assert isinstance(instruments, list)
+        assert isinstance(start, int)
+        assert isinstance(end, int)
+        fw.create(instruments, start, end)
+    elif command == "publish":
+        fw.publish((instruments, start, end, filled, redo))
+
+
+import click
+
+
+@click.command()
+@click.option("-i", "--instruments", default="")
+@click.option("-s", "--start", default=None, type=click.INT)
+@click.option("-e", "--end", default=None, type=click.INT)
+@click.option("-f", "--filled", default=False, is_flag=True)
+@click.option("-r", "--redo", default=3, type=click.INT)
+@click.option('-n', "--filename", default="oanda_m1.json", type=click.STRING)
+@click.argument("command", nargs=-1)
+def command(command, instruments, start, end, filled=False, redo=3, filename="oanda_m1.json"):
+    with open(filename) as f:
+        conf = json.load(f)
+    api = API(conf.get("token", None))
+    storage = MongodbStorage(**conf.get("storage", {}))
+    fw = Framework(api, storage, conf.get("ltz", 8))
+    if instruments:
+        instruments = instruments.split(",")
+    else:
+        instruments = conf["instruments"]
+    
+    if len(command) == 0:
+        command = ["publish"]
+    for cmd in command:
+        if command == "create":
+            if not start:
+                start = conf.get("start", None)
+            if not end:
+                end = conf.get("end", int(datetime.now().strftime("%Y%m%d")))
+            assert isinstance(start, int)
+            assert isinstance(end, int)
+            fw.create(instruments, start, end)
+        elif command == "publish":
+            fw.publish((instruments, start, end, filled, redo))
 
 
 def test():
