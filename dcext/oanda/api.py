@@ -11,6 +11,7 @@ STREAM_TRADE = "https://stream-fxtrade.oanda.com/"
 
 # CANDLES = "/v3/instruments/{instruments}/candles"
 CANDLES = "/v1/candles?instrument={instrument}"
+CANDLESV3 = "/v3/instruments/{instrument}/candles"
 ACCUOUNTS = "/v3/accounts"
 INSTRUMENTS = "/v3/accounts/{accountID}/instruments"
 PRICING = "/v3/accounts/{accountID}/pricing?instruments={instruments}"
@@ -45,8 +46,8 @@ class OandaAPI(object):
     REST = REST_PRACTICE
     STREAM = STREAM_PRACTICE
 
-    def __init__(self, token, trade_type=PRACTICE):
-        self.token = token
+    def __init__(self, token=None, trade_type=PRACTICE):
+        self.token = token if token else TOKEN
         self.headers = {
             "Authorization": "Bearer %s" % self.token,
             "Content-Type": "application/json"
@@ -70,3 +71,24 @@ class OandaAPI(object):
             yield from response.iter_lines()
         else:
             raise  requests.HTTPError(response.status_code, response.content)
+
+
+def main():
+    from datetime import datetime, timedelta, timezone
+    import json
+    api = OandaAPI(TOKEN)
+    
+    # start = datetime(2018, 8, 24-7, 20, 50, tzinfo=timezone(timedelta(hours=0)))
+    t0 = timezone(timedelta(hours=0))
+    t8 = timezone(timedelta(hours=8))
+    start = datetime(2018, 8, 25, tzinfo=t8).astimezone(t0)
+    # end = datetime(2018, 8, 20, 1, tzinfo=t8).astimezone(t0)
+    data = api.get(CANDLESV3, {"from": start.timestamp(), "granularity": "M1"}, instrument="EUR_USD")
+    d = json.loads(data)
+    # print(json.dumps(d, indent=2))
+    for bar in d["candles"]:
+        print(bar["time"], bar["complete"])
+        
+
+if __name__ == '__main__':
+    main()
