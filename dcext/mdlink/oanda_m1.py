@@ -69,8 +69,40 @@ class MongodbStorage(object):
         self.init_log_collection()
 
     def ensure_table(self, instrument):
-        self.db[instrument].create_index("datetime", unique=1, background=True)
+        collection = self.db[instrument]
+        info = collection.index_information()
+        unique = info.get("datetime_1", {}).get("unique", False)
+        if not unique:
+            logging.warning("ensure table | %s | index datetime not unique", instrument)
+            self.drop_dups(collection)
+            collection.create_index("datetime", unique=1, background=True)
+            logging.warning("ensure table | %s | unique index datetime created", instrument)
+        else:
+            logging.warning("ensure table | %s | unique index datetime exists", instrument)
     
+    @staticmethod
+    def drop_dups(collection):
+        dts = set()
+        cursor = collection.find(None, ["datetime"])
+        _id = None
+        while True:
+            try:
+                doc = next(cursor)
+                _id = doc["_id"]
+                dt = doc["datetime"]
+            except StopIteration:
+                break
+            except KeyError:
+                continue
+            except:
+                cursor = collection.find({"_id": {"$gte": _id}}, ["datetime"])
+            else:
+                if dt in dts:
+                    collection.delete_one({"_id": _id})
+                    logging.warning("drop dups | %s | %s" % (collection, dt))
+                else:
+                    dts.add(dt)
+
     def init_log_collection(self):
         self.log.create_index([
             (self.INSTRUMENT, 1),
@@ -172,6 +204,10 @@ class Framework(object):
             r = self.storage.create(i, int(d))
             logging.warning("create log | %s | %s | %s", i, d, r)
     
+    def ensure(self, instruments):
+        for i in instruments:
+            self.storage.ensure_table(i)
+    
     def publish(self, instruments=None, start=None, end=None, filled=False, redo=3):
         logging.warning("publish cycle start| %s | %s | %s | %s | %s", instruments, start, end, filled, redo)
         now = datetime.now(self.ltz)
@@ -226,7 +262,7 @@ def init_from_config(filename):
 
 
 def run(command, instruments, start, end, filled=False, redo=3, config_file="oanda_m1.json"):
-    fw = init_from_config(filename)
+    fw = init_from_config(config_file)
     if command == "create":
         assert isinstance(instruments, list)
         assert isinstance(start, int)
@@ -261,7 +297,7 @@ def command(command, instruments, start, end, filled=False, redo=3, filename="oa
     if len(command) == 0:
         command = ["publish"]
     for cmd in command:
-        if command == "create":
+        if cmd == "create":
             if not start:
                 start = conf.get("start", None)
             if not end:
@@ -269,8 +305,10 @@ def command(command, instruments, start, end, filled=False, redo=3, filename="oa
             assert isinstance(start, int)
             assert isinstance(end, int)
             fw.create(instruments, start, end)
-        elif command == "publish":
+        elif cmd == "publish":
             fw.publish((instruments, start, end, filled, redo))
+        elif cmd == "ensure":
+            fw.ensure(instruments)
 
 
 def test():
@@ -286,4 +324,5 @@ def test():
 
 
 if __name__ == '__main__':
-    test()
+    # test()
+    command() 
