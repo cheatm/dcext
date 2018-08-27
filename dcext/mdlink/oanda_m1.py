@@ -8,6 +8,9 @@ import logging
 import json
 
 
+EXCHANGE = "oanda"
+
+
 def get_dt(date, tz=None):
     if isinstance(date, int):
         return get_dt(str(date), tz)
@@ -46,7 +49,7 @@ class API(OandaAPI):
         doc = bar.copy()
         mid = doc.pop("mid")
         for o, t in self.MAPPER.items():
-            doc[t] = mid[o]
+            doc[t] = float(mid[o])
         return doc
 
 
@@ -69,7 +72,7 @@ class MongodbStorage(object):
         self.init_log_collection()
 
     def ensure_table(self, instrument):
-        collection = self.db[instrument]
+        collection = self.get_collection(instrument)
         info = collection.index_information()
         unique = info.get("datetime_1", {}).get("unique", False)
         if not unique:
@@ -145,7 +148,7 @@ class MongodbStorage(object):
             filters[self.FILL] = {"$gte": 0}
         elif filled is not None:
             filters[self.FILL] = 0
-        
+        print(filters)
         cursor = self.log.find(filters, [self.INSTRUMENT, self.DATE, self.START, self.END])
         for doc in list(cursor):
             yield doc[self.INSTRUMENT], doc[self.DATE], doc[self.START].replace(tzinfo=self.tz), doc[self.END].replace(tzinfo=self.tz)
@@ -160,11 +163,14 @@ class MongodbStorage(object):
     
     def write(self, instrument, data):
         count = 0
-        collection = self.db[instrument]
+        collection = self.get_collection(instrument)
         for bar in data:
             doc = self.vnpy_format(bar, instrument)
             count += self.append(collection, doc)
         return count
+
+    def get_collection(self, instrumet):
+        return self.db["%s:%s" % (instrumet, EXCHANGE)]
 
     @staticmethod
     def append(collection, bar):
@@ -178,8 +184,8 @@ class MongodbStorage(object):
     def vnpy_format(self, bar, symbol):
         bar.pop("complete", None)
         bar["symbol"] = symbol
-        bar["exchange"] = "oanda"
-        bar["vtSymbol"] = "%s:%s" % (symbol, "oanda")
+        bar["exchange"] = EXCHANGE
+        bar["vtSymbol"] = "%s:%s" % (symbol, EXCHANGE)
         dt = datetime.strptime(bar.pop("time").split(".")[0], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=self.tz)
         bar["datetime"] = dt
         bar["date"] = dt.strftime("%Y%m%d")
@@ -306,7 +312,7 @@ def command(command, instruments, start, end, filled=False, redo=3, filename="oa
             assert isinstance(end, int)
             fw.create(instruments, start, end)
         elif cmd == "publish":
-            fw.publish((instruments, start, end, filled, redo))
+            fw.publish(instruments, start, end, filled, redo)
         elif cmd == "ensure":
             fw.ensure(instruments)
 
