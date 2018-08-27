@@ -193,6 +193,13 @@ class MongodbStorage(object):
         bar["rawData"] = None
         bar["openInterest"] = 0
         return bar
+    
+    def get_last_date(self):
+        doc = self.log.find_one(sort=[(self.DATE, -1)])
+        if doc:
+            return doc[self.DATE]
+        else:
+            return None
 
 
 class Framework(object):
@@ -256,6 +263,9 @@ class Framework(object):
         else:
             logging.warning("download bar | %s | %s | fill: %s, count: %s", instrument, date, fill, count)
             return 1
+    
+    def last_date(self):
+        return self.storage.get_last_date()
 
 
 def init_from_config(filename):
@@ -305,7 +315,7 @@ def command(command, instruments, start, end, filled=False, redo=3, filename="oa
     for cmd in command:
         if cmd == "create":
             if not start:
-                start = conf.get("start", None)
+                start = fw.last_date() or conf.get("start", None)
             if not end:
                 end = conf.get("end", int(datetime.now().strftime("%Y%m%d")))
             assert isinstance(start, int)

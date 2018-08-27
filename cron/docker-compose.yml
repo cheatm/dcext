@@ -1,0 +1,15 @@
+version: '3'
+services:
+  oanda: 
+    container_name: oanda_m1
+    image: "dcext"
+    network_mode: "host"
+    command: "bash cron.sh"
+    environment:
+      OANDA_ACCOUNTID: ""
+      OANDA_TOKEN: ""
+      ETC_PATH: "/app/etc"
+      ONADA_TYPE: "PRACTICE"
+    volumes:
+      - ./cron.sh:/app/cron.sh
+      - ./oanda_m1.json:/app/etc/oanda_m1.json
