@@ -1,6 +1,6 @@
 
 
-ctime=(14:21 14:22 14:23)
+ctime=(08:01 08:02 08:03)
 ptime=(08:30 09:00 09:30)
 
 echo Start OANDA M1 data collector.
