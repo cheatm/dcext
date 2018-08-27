@@ -1,4 +1,6 @@
+#! /bin/bash
 
+echo 'Asia/Shanghai' >/etc/timezone & cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
 ctime=(08:01 08:02 08:03)
 ptime=(08:30 09:00 09:30)
