@@ -69,7 +69,6 @@ class MinuteDelta(object):
     DELTA = 1
 
     def __init__(self):
-        self.DELTA = delta
         self.delta = timedelta(minutes=self.DELTA)
     
     def standart_time(self, time):
