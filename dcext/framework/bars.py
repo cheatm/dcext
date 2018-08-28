@@ -10,7 +10,19 @@ UPD = 1
 OLD = 2
 
 
-class Bar(object):
+class BaseBar(object):
+
+    def on_tick(self, time, price , volume):
+        raise NotImplementedError()
+
+    def to_dict(self):
+        raise NotImplementedError()
+    
+    def update(self, price, volume):
+        raise NotImplementedError()
+
+
+class Bar(BaseBar):
 
     def __init__(self, datetime, open=FLOAT, high=FLOAT, low=FLOAT, close=FLOAT, volume=INT):
         self.datetime = datetime
@@ -19,7 +31,7 @@ class Bar(object):
         self.low = low
         self.close = close
         self.volume = volume
-
+    
     def on_tick(self, time, price , volume):
         raise NotImplementedError()
     
@@ -52,13 +64,26 @@ class Bar(object):
             return dct
 
 
-class Bar1M(Bar):
+class MinuteDelta(object):
+
+    DELTA = 1
+
+    def __init__(self):
+        self.DELTA = delta
+        self.delta = timedelta(minutes=self.DELTA)
+    
+    def standart_time(self, time):
+        minutes = time.minute - time.minute % self.DELTA
+        return time.replace(minute=minutes, second=0, microsecond=0)
+
+
+class Bar1M(Bar, MinuteDelta):
 
     DELTA = 1
 
     def __init__(self, datetime, open=FLOAT, high=FLOAT, low=FLOAT, close=FLOAT, volume=INT):
+        MinuteDelta.__init__(self)
         super(Bar1M, self).__init__(self.standart_time(datetime), open, high, low, close, volume)
-        self.delta = timedelta(minutes=self.DELTA)
 
     def on_tick(self, time, price, volume=INT):
         if time - self.datetime >= self.delta:
@@ -68,16 +93,79 @@ class Bar1M(Bar):
             changed = self.update(price, volume if volume else self.volume)
             if changed:
                 changed["datetime"] = self.datetime
-                return UPD, changed
+                return UPD, changed 
             else:
                 return OLD, None
 
 
-    def standart_time(self, time):
-        minutes = time.minute - time.minute % self.DELTA
-        return time.replace(minute=minutes, second=0, microsecond=0)
-    
+class VBar(object):
 
+    def __init__(self, datetime, open=FLOAT, high=FLOAT, low=FLOAT, close=FLOAT, init_volume=INT, last_volume=INT):
+        self.datetime = datetime
+        self.open = open
+        self.high = high
+        self.low = low
+        self.close = close
+        self.init_volume = init_volume
+        self.last_volume = last_volume
+    
+    @property
+    def volume(self):
+        return self.last_volume - self.init_volume
+    
+    def to_dict(self):
+        return {
+            "datetime": self.datetime,
+            "open": self.open,
+            "high": self.high,
+            "low": self.low,
+            "close": self.close,
+            "volume": self.volume,
+            "init_volume": self.init_volume,
+            "last_volume": self.last_volume
+        }
+
+    def update(self, price, volume):
+        dct = {}
+        if volume > self.last_volume:
+            self.last_volume == volume
+            dct["last_volume"] = volume
+            dct["volume"] = self.volume
+        
+        if price == self.close:
+            return dct
+        else:
+            dct["close"] = price
+            self.close = price
+            if price > self.high:
+                self.high = price
+                dct["high"] = price
+            elif price < self.low:
+                self.low = price
+                dct["low"] = price
+            return dct
+
+
+class VBar1M(VBar, MinuteDelta):
+
+    DELTA = 1
+
+    def __init__(self, datetime, open=FLOAT, high=FLOAT, low=FLOAT, close=FLOAT, init_volume=INT, last_volume=INT):
+        MinuteDelta.__init__(self)
+        super(VBar1M, self).__init__(self.standart_time(datetime), open, high, low, close, init_volume, last_volume)
+
+    def on_tick(self, time, price, volume=INT):
+        if time - self.datetime >= self.delta:
+            self.__init__(self.standart_time(time), price, price, price, price, self.last_volume, volume)
+            return NEW, self.to_dict()
+        else:
+            changed = self.update(price, volume)
+            if changed:
+                changed["datetime"] = self.datetime
+                return UPD, changed
+            else:
+                return OLD, None
+        
 
 class Handler(object):
 

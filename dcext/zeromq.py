@@ -17,6 +17,14 @@ def get_req_sock(address):
     return socket
 
 
+def get_sub_sock(address):
+    context = zmq.Context()
+    socket = context.socket(zmq.SUB)
+    socket.connect(address)
+    socket.subscribe("")
+    return socket
+
+
 class ZMQPublisher(Publisher):
 
     def __init__(self, socket):
@@ -30,3 +38,9 @@ class ZMQPublisher(Publisher):
 
     def pub(self, content):
         self.socket.send_multipart([content])
+
+
+def subscribe(addr):
+    sock = get_sub_sock(addr)
+    while True:
+        yield sock.recv_multipart()[0]

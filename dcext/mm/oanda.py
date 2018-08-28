@@ -237,6 +237,7 @@ class MongoDBBarHandler(MongoDBHandler):
             complete = bar.pop("complete")
             if not complete:
                 self.bars[inst, gran] = bar
+                logging.warning("write bar | %s | %s | bar not complete", inst, gran)
             self.transform(bar)
             logging.warning("write bar | %s | %s | %s", inst, gran, bar)
             self.storage.put(name, bar)
