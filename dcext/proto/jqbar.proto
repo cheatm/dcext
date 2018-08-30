@@ -1,0 +1,35 @@
+syntax = "proto2";
+
+
+enum MessageType{
+    BAR_REQ = 1;
+    BAR_RESP = 2;
+    BAR = 3;
+}
+
+message JQMessage{
+    required int32 type = 1;
+    required string body = 2;
+}
+
+message BarReq{
+    required string symbol = 1;
+    required int32 start_time = 2;
+    required int32 end_time = 3;
+    required int32 trade_date = 4;
+}
+
+message Bar{
+    required int32 date = 1;
+    required int32 time = 2;
+    required double open = 3;
+    required double high = 4;
+    required double low = 5;
+    required double close = 6;
+    required int32 volume = 7;
+}
+
+message BarResp{
+    required string symbol = 1;
+    repeated Bar bars = 2; 
+}

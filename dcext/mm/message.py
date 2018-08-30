@@ -33,15 +33,18 @@ class QuotePublisher(Publisher):
             ind = msg2quote(msg)
             if ind:
                 if ind.type in [MD_FUT_L1, MD_FUT_L2]:
-                    yield ind.fut
+                    quote = ind.fut
                 else:
-                    yield ind.stk
+                    quote = ind.stk
+                
+                yield quote
+
 
 def main():
     qp = QuotePublisher("tcp://127.0.0.1:10001")
-    for ind in qp:
-        print(ind)
-        break
+    for quote in qp:
+        print(quote)
+
 
 if __name__ == '__main__':
     main()

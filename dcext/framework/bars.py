@@ -86,7 +86,7 @@ class Bar1M(Bar, MinuteDelta):
 
     def on_tick(self, time, price, volume=INT):
         if time - self.datetime >= self.delta:
-            self.__init__(self.standart_time(time), price, price, price, price, volume)
+            self.__init__(time, price, price, price, price, volume)
             return NEW, self.to_dict()
         else:
             changed = self.update(price, volume if volume else self.volume)
@@ -127,7 +127,7 @@ class VBar(object):
     def update(self, price, volume):
         dct = {}
         if volume > self.last_volume:
-            self.last_volume == volume
+            self.last_volume = volume
             dct["last_volume"] = volume
             dct["volume"] = self.volume
         
@@ -155,7 +155,7 @@ class VBar1M(VBar, MinuteDelta):
 
     def on_tick(self, time, price, volume=INT):
         if time - self.datetime >= self.delta:
-            self.__init__(self.standart_time(time), price, price, price, price, self.last_volume, volume)
+            self.__init__(time, price, price, price, price, self.last_volume, volume)
             return NEW, self.to_dict()
         else:
             changed = self.update(price, volume)
@@ -184,6 +184,7 @@ class Publisher(object):
 from threading import Thread
 from queue import Queue, Empty
 import logging
+import traceback
 
 
 class CoreEngine(object):
@@ -213,6 +214,7 @@ class CoreEngine(object):
                 break
             except Exception as e:
                 logging.error("publisher next item error | %s | %s", name, e)
+                traceback.print_exc()
             else:
                 self.queue.put(item)
         publisher.stop()
@@ -243,6 +245,7 @@ class CoreEngine(object):
                 continue
             except Exception as e:
                 logging.error("handle message | %s | %s | %s", tag, value, e)
+                traceback.print_exc()
 
 
     def start_publisher(self, name):
