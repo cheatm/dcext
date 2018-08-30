@@ -34,8 +34,9 @@ def load(config_file, inst_file="", date_file=""):
     listen_freq.update(set(listen.get("freq", [])))
 
     if inst_file:
-        insts = pd.read_csv(inst_file).set_index("jzcode")
-        mapper.update(insts["symbol"].to_dict())
+        insts = pd.read_csv(inst_file).set_index("symbol")
+        for symbol  in listen_symbol:
+            mapper[insts.loc[symbol, "jzcode"]] = symbol 
 
     if date_file:
         globals()["dates"] = pd.read_csv(date_file)["date"]
