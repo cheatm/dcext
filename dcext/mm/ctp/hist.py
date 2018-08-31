@@ -19,7 +19,7 @@ def history(host, db, symbols, api, trade_days, max=1000):
         table = env.get_table_name(symbol, "M1")
         last = storage.last(table)
         if last:
-            dt = datetime.strptime(last, "%Y%m%d %H:%M:%S")
+            dt = datetime.strptime(last["datetime"], "%Y%m%d %H:%M:%S")
             dates = find(trade_days, date2int(datetime.now()), date2int(dt))
             data = create(api, symbol, dates, max)
         else:

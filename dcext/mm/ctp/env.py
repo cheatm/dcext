@@ -1,5 +1,10 @@
 import json
 import pandas as pd
+import logging
+import sys
+
+
+logging.basicConfig(stream=sys.stdout)
 
 
 jaqs_addr = "tcp://data.quantos.org:8910"
@@ -33,12 +38,20 @@ def load(config_file, inst_file="", date_file=""):
     listen_symbol.update(set(listen.get("symbol", [])))
     listen_freq.update(set(listen.get("freq", [])))
 
+    for name in [
+        "jaqs_addr", "jaqs_user", "tick_subscribe", "tick_publish",
+        "jqbar_subscribe", "listen_symbol", "listen_freq"
+        ]:
+        logging.warning("config | %s | %s", name, globals()[name])
+
     if inst_file:
+        logging.warning("config | instruments file | %s", inst_file)
         insts = pd.read_csv(inst_file).set_index("symbol")
         for symbol  in listen_symbol:
             mapper[insts.loc[symbol, "jzcode"]] = symbol 
 
     if date_file:
+        logging.warning("config | calendar | %s", date_file)
         globals()["dates"] = pd.read_csv(date_file)["date"]
 
 
