@@ -4,9 +4,10 @@ services:
     container_name: ctp_tick
     image: "dcext"
     network_mode: "host"
-    command: "python dcext/mm/ctp/run.py etc/ctp.json etc/instrument.csv"
+    command: "bash run.sh"
     volumes: 
       - ./etc:/app/etc
+      - ./run.sh:/app/run.sh
   jqbar:
     container_name: jqbar
     image: "dcext"
