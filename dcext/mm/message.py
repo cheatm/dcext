@@ -17,7 +17,7 @@ def get_rsp(msg):
 
 
 def msg2quote(msg):
-    return get_rsp(msg[2:])    
+    return get_rsp(msg[4:])    
 
 
 
