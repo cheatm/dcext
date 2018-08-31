@@ -10,7 +10,7 @@ echo "Time to check set at ${check[*]}"
 while true
 do
     now=`date +%H:%M` 
-    for t in ${ctime[*]} 
+    for t in ${check[*]} 
     do
         if [ $now == $t ]
         then 

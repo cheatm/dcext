@@ -158,7 +158,7 @@ class TickPublisher(QuotePublisher):
             if symbol:
                 tick = Tick(
                     symbol,
-                    make_dt(quote.qs.date, quote.time),
+                    make_dt( quote.qs.tradeday, quote.time),
                     quote.last, quote.volume
                 )
                 yield TICK, tick
