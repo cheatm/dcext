@@ -22,3 +22,11 @@ services:
     volumes:
     - ./log:/mdlink-1.2-linux/data/log
     - ./etc:/mdlink-1.2-linux/etc
+  hist:
+    container_name: hist
+    image: "dcext"
+    network_mode: "host"
+    command: "bash hist.sh"
+    volumes:
+       - ./etc:/app/etc
+       - ./hist.sh:/app/hist.sh
