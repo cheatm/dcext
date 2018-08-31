@@ -110,8 +110,9 @@ class BarsStorage(Handler):
             tag, data = change
             name = env.get_table_name(tick.symbol, gran)
             if data:
-                doc = transform(data)
-                self.storage.put(name, doc)
+                if env.is_trade_time(tick.symbol, data["datetime"]):
+                    doc = transform(data)
+                    self.storage.put(name, doc)
             if tag == NEW and (gran == "M1"):
                 logging.warning("write | new bar | %s", data)
                 t = data["datetime"]
@@ -208,8 +209,8 @@ def test():
     core.start()
 
 
-def run(conf_file, inst_file):
-    env.load(conf_file, inst_file)
+def run(conf_file, inst_file, market_file):
+    env.load(conf_file, inst_file, market_file=market_file)
 
     qp = TickPublisher(env.tick_subscribe, env.mapper)
     appender = MongodbBarAppender.config(
@@ -227,7 +228,7 @@ def run(conf_file, inst_file):
 
 def main():
     import sys
-    run(sys.argv[1], sys.argv[2])
+    run(sys.argv[1], sys.argv[2], sys.argv[3])
  
 
 if __name__ == '__main__':

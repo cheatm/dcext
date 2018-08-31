@@ -2,6 +2,7 @@ import json
 import pandas as pd
 import logging
 import sys
+from datetime import time
 
 
 logging.basicConfig(stream=sys.stdout)
@@ -25,9 +26,10 @@ listen_freq = {"M1"}
 
 mapper = {}
 dates = []
+timelimit = {}
 
 
-def load(config_file, inst_file="", date_file=""):
+def load(config_file, inst_file="", date_file="", market_file=""):
     with open(config_file) as f:
         conf = json.load(f)
     
@@ -49,10 +51,27 @@ def load(config_file, inst_file="", date_file=""):
         insts = pd.read_csv(inst_file).set_index("symbol")
         for symbol  in listen_symbol:
             mapper[insts.loc[symbol, "jzcode"]] = symbol 
+        if market_file:
+            logging.warning("config | market file | %s", market_file)
+            limits = market_time_limit(market_file)
+            for symbol  in listen_symbol:
+                timelimit[symbol] = limits.get(insts.loc[symbol, "market"], tuple())
 
     if date_file:
         logging.warning("config | calendar | %s", date_file)
         globals()["dates"] = pd.read_csv(date_file)["date"]
+
+
+def is_trade_time(symbol, dt):
+    limits = timelimit.get(symbol, None)
+    t = dt.time()
+    if limits:
+        for begin, end in limits:
+            if begin <= t and (t < end):
+                return True
+        return False
+    else:
+        return True
 
 
 def replace(head, conf):
@@ -66,10 +85,35 @@ def get_table_name(name, gran):
     return "%s_%s" % (mapped, gran)
 
 
-def main():
-    load(r"D:\DataServer\etc\ctp.json", r"D:\DataServer\etc\instrument.csv")
-    print(get_table_name("rb1901.SHF", "M1"))
+def market_time_limit(filename):
+    market = pd.read_csv(filename, index_col="market")
+    limits = {}
+    for code in market.index:
+        l = []
+        for i in range(1, 5):
+            begin, end = market.loc[code, "auctbeg%d" % i], market.loc[code, "auctend%d" % i]
+            if begin < end:
+                l.append((split(begin), split(end)))
+            elif begin > end:
+                l.append((split(begin), time(23, 59, 59, 999999)))
+                l.append((time(0, 0, 0), split(end)))
+            else:
+                break
+        limits[code] = tuple(l)
+    return limits
+            
 
+def split(n):
+    return time(int(n/100), n%100) 
+
+
+def main():
+    load(r"D:\DataServer\etc\ctp.json", r"D:\DataServer\etc\instrument.csv", market_file=r"D:\DataServer\etc\market.csv")
+    # print(get_table_name("rb1901.SHF", "M1"))
+    # limits = market_time_limit(r"D:\DataServer\etc\market.csv")
+    from datetime import datetime
+    dt = datetime.now().replace(hour=15, minute=0, second=0, microsecond=0)
+    print(is_trade_time("rb1901.SHF", dt))
 
 
 
