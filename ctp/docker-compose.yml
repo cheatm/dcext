@@ -1,0 +1,24 @@
+version: '3'
+services:
+  ctp: 
+    container_name: ctp_tick
+    image: "dcext"
+    network_mode: "host"
+    command: "python dcext/mm/ctp/run.py etc/ctp.json etc/instrument.csv"
+    volumes: 
+      - ./etc:/app/etc
+  jqbar:
+    container_name: jqbar
+    image: "dcext"
+    network_mode: "host"
+    command: "python dcext/mm/ctp/jqbar.py etc/ctp.json"
+    volumes:
+      - ./etc:/app/etc
+  mdlink_ctp:
+    container_name: mdlink_ctp
+    image: "mdlink:test"
+    network_mode: "host"
+    command: /mdlink-1.2-linux/bin/mdlink_ctp future1
+    volumes:
+    - ./log:/mdlink-1.2-linux/data/log
+    - ./etc:/mdlink-1.2-linux/etc
