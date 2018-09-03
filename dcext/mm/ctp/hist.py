@@ -105,12 +105,5 @@ def main():
     run(sys.argv[1], sys.argv[2])
 
 
-def test():
-    dates = pd.read_csv(r"D:\DataServer\etc\calendar.csv")["date"]
-    api = DataApi("tcp://data.quantos.org:8910")
-    api.login("18566262672", "eyJhbGciOiJIUzI1NiJ9.eyJjcmVhdGVfdGltZSI6IjE1MTI3MDI3NTAyMTIiLCJpc3MiOiJhdXRoMCIsImlkIjoiMTg1NjYyNjI2NzIifQ.O_-yR0zYagrLRvPbggnru1Rapk4kiyAzcwYt2a3vlpM")
-    history("192.168.0.105:37017", "ctp", ["rb1901.SHF"], api, dates)
-
-
 if __name__ == '__main__':
     main() 

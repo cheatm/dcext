@@ -21,25 +21,6 @@ class Tick:
         self.volume = volume
 
 
-class VBarEnd(VBar1M):
-
-    def standart_time(self, time):
-        return super(VBarEnd, self).standart_time(time) + timedelta(minutes=1)
-    
-    def on_tick(self, time, price, volume=0):
-        if time > self.datetime:
-            self.__init__(time, price, price, price, price, self.last_volume, volume)
-            return NEW, self.to_dict()
-        else:
-            changed = self.update(price, volume)
-            if changed:
-                changed["datetime"] = self.datetime
-                return UPD, changed
-            else:
-                return OLD, None
-
-
-
 class BarsInstance(object):
     
     granularities = {
@@ -192,23 +173,6 @@ class BarReceiver(Publisher):
         return rsp
 
 
-def test():
-    mapper = {27871: "rb1810.SHF", 28028: "rb1901.SHF"}
-    
-    qp = TickPublisher("tcp://127.0.0.1:10001", mapper)
-    appender = MongodbBarAppender.config(
-        "192.168.0.105:37017", "dummy_tcp", 
-        [env.get_table_name(name, "M1") for name in mapper.values()],
-        ["datetime"], size=2**25, max=1000
-    )
-    handler = BarsStorage(appender, "tcp://*:20009")
-
-    core = CoreEngine()
-    core.register_publisher("qp", qp)
-    core.register_handler(TICK, handler)
-    core.start()
-
-
 def run(conf_file, inst_file, market_file):
     env.load(conf_file, inst_file, market_file=market_file)
 
@@ -233,4 +197,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    # test()

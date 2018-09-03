@@ -3,7 +3,7 @@
 echo 'Asia/Shanghai' >/etc/timezone 
 cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
-check=(08:50 10:20 10:25 11:35 13:20 15:30 20:30 02:40)
+check=(08:50 10:20 10:25 11:35 13:20 15:30 20:30 23:10)
 
 echo "Time to check set at ${check[*]}"
 
