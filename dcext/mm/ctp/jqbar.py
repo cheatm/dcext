@@ -161,8 +161,7 @@ def test():
     core.start()
 
 
-def run(conf_file):
-    env.load(conf_file)
+def run():
     publisher = RequestReceiver(env.jqbar_subscribe)
     storage = BarStorage.config(env.mongodb_uri, env.mongodb_db)
     handler = ReqestHandler(storage, env.jaqs_user, env.jaqs_password, env.jaqs_addr)
@@ -174,8 +173,8 @@ def run(conf_file):
 
 def main():
     import sys
-    filename = sys.argv[1]
-    run(filename)
+    env.init(*sys.argv[1:], config="ctp.json")
+    run()
 
 
 if __name__ == '__main__':

@@ -3,6 +3,7 @@ import pandas as pd
 import logging
 import sys
 from datetime import time
+import os
 
 
 logging.basicConfig(stream=sys.stdout)
@@ -29,8 +30,17 @@ dates = []
 timelimit = {}
 
 
-def load(config_file, inst_file="", date_file="", market_file=""):
-    with open(config_file) as f:
+def init(*filename, **default):
+    conf = dict([name.split("=", 1) for name in filename])
+    root = conf.pop("dir", "./etc")
+    for key, value in default.items():
+        default[key] = os.path.join(root, value)
+    default.update(conf)
+    load(**default)
+
+
+def load(config, inst="", calendar="", market=""):
+    with open(config) as f:
         conf = json.load(f)
     
     for name in ["jaqs", "mongodb", "tick", "jqbar"]:
@@ -46,20 +56,20 @@ def load(config_file, inst_file="", date_file="", market_file=""):
         ]:
         logging.warning("config | %s | %s", name, globals()[name])
 
-    if inst_file:
-        logging.warning("config | instruments file | %s", inst_file)
-        insts = pd.read_csv(inst_file).set_index("symbol")
+    if inst:
+        logging.warning("config | instruments file | %s", inst)
+        insts = pd.read_csv(inst).set_index("symbol")
         for symbol  in listen_symbol:
             mapper[insts.loc[symbol, "jzcode"]] = symbol 
-        if market_file:
-            logging.warning("config | market file | %s", market_file)
-            limits = market_time_limit(market_file)
+        if market:
+            logging.warning("config | market file | %s", market)
+            limits = market_time_limit(market)
             for symbol  in listen_symbol:
                 timelimit[symbol] = limits.get(insts.loc[symbol, "market"], tuple())
 
-    if date_file:
-        logging.warning("config | calendar | %s", date_file)
-        globals()["dates"] = pd.read_csv(date_file)["date"]
+    if calendar:
+        logging.warning("config | calendar | %s", calendar)
+        globals()["dates"] = pd.read_csv(calendar)["date"]
 
 
 def is_trade_time(symbol, dt):
@@ -108,12 +118,10 @@ def split(n):
 
 
 def main():
-    load(r"D:\DataServer\etc\ctp.json", r"D:\DataServer\etc\instrument.csv", market_file=r"D:\DataServer\etc\market.csv")
-    # print(get_table_name("rb1901.SHF", "M1"))
-    # limits = market_time_limit(r"D:\DataServer\etc\market.csv")
-    from datetime import datetime
-    dt = datetime.now().replace(hour=15, minute=0, second=0, microsecond=0)
-    print(is_trade_time("rb1901.SHF", dt))
+    # r = init(r"config=D:\DataServer\etc\ctp.json", r"inst=D:\DataServer\etc\instrument.csv", r"market=D:\DataServer\etc\market.csv")
+    init(config="ctp.json", inst="instrument.csv", market="market.csv")
+
+
 
 
 

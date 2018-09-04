@@ -89,8 +89,7 @@ def get_today_int():
     return dt.year*10000 + dt.month*100 + dt.day
 
 
-def run(conf_file, calendar_file):
-    env.load(conf_file, date_file=calendar_file)
+def run():
     api = DataApi(env.jaqs_addr)
     api.login(env.jaqs_user, env.jaqs_password)
     history(
@@ -99,10 +98,10 @@ def run(conf_file, calendar_file):
     )
 
 
-
 def main():
     import sys
-    run(sys.argv[1], sys.argv[2])
+    env.init(*sys.argv[1:], config="ctp.json", calendar="calendar.csv")
+    run()
 
 
 if __name__ == '__main__':

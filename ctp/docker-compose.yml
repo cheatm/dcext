@@ -12,7 +12,7 @@ services:
     container_name: jqbar
     image: "dcext"
     network_mode: "host"
-    command: "python dcext/mm/ctp/jqbar.py etc/ctp.json"
+    command: "python dcext/mm/ctp/jqbar.py"
     volumes:
       - ./etc:/app/etc
   mdlink_ctp:

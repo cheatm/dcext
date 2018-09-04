@@ -173,8 +173,7 @@ class BarReceiver(Publisher):
         return rsp
 
 
-def run(conf_file, inst_file, market_file):
-    env.load(conf_file, inst_file, market_file=market_file)
+def run():
 
     qp = TickPublisher(env.tick_subscribe, env.mapper)
     appender = MongodbBarAppender.config(
@@ -192,7 +191,8 @@ def run(conf_file, inst_file, market_file):
 
 def main():
     import sys
-    run(sys.argv[1], sys.argv[2], sys.argv[3])
+    env.init(*sys.argv[1:], config="ctp.json", inst="instrument.csv", market="market.csv")
+    run()
  
 
 if __name__ == '__main__':

@@ -15,7 +15,7 @@ do
         if [ $now == $t ]
         then 
             echo "[check and reload] start at `date +%Y-%m-%dT%H:%M:%S`"
-            python dcext/mm/ctp/hist.py etc/ctp.json etc/calendar.csv
+            python dcext/mm/ctp/hist.py
             echo "[check and reload] accomplish at `date +%Y-%m-%dT%H:%M:%S`"
             break
         fi
