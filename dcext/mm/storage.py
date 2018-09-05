@@ -61,6 +61,11 @@ class BarStorage(object):
             self.col.update_one({"datetime": doc["datetime"]}, {"$set": doc})
         except Exception as e:
             logging.error("write bar | update | %s | %s", doc, e)
+    
+    def finish(self):
+        if self._last:
+            doc = {"flag": 1, "datetime": self._last["datetime"]}
+            self.update(doc)
 
 
 class MongodbBarAppender(object):
@@ -79,6 +84,9 @@ class MongodbBarAppender(object):
             names, indexes, **options
         )
         return cls(container)
+
+    def finish(self, name):
+        self.bars[name].finish()
 
     def put(self, name, doc):
         self.bars[name].put(doc)

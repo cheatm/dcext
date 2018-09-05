@@ -25,7 +25,7 @@ def history(host, db, symbols, api, trade_days, max=1000):
         else:
             dates = find(trade_days, date2int(datetime.now()))
             data = create(api, symbol, dates, max)
-        
+        data["flag"] = 1
         for doc in data.to_dict("record"):
             doc["datetime"] = doc["datetime"].strftime("%Y%m%d %H:%M:%S")
             doc["volume"] = int(doc["volume"])

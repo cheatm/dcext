@@ -57,9 +57,6 @@ class RequestReceiver(Publisher):
 class ReqestHandler(Handler):
 
     def __init__(self, storage, user, password, jaqs_addr="tcp://data.quantos.org:8910"):
-        # self.addr = addr
-        # self.sock = get_publish_sock(addr)
-        # self.sock.send(b"start")
         self.user = user
         self.password = password
         self.jaqs_addr = jaqs_addr
@@ -79,6 +76,7 @@ class ReqestHandler(Handler):
         logging.warning("received bar req | %s | %s", method, params)
         with self as api:
             data, msg = getattr(api, method)(**params)
+            data["flag"] = 1
             if msg == "0,":
                 self.send(params["symbol"], data)
             else:

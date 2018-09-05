@@ -85,20 +85,50 @@ class BarsStorage(Handler):
         self.addr = addr
         self.sock = get_publish_sock(addr)
         self.sock.send(b"start")
+        self.methods = {
+            NEW: self.handle_new,
+            UPD: self.handle_upd,
+            OLD: lambda symbol, gran, data:None,
+        }
+    
+    def handle_new(self, symbol, gran, data):
+        name = env.get_table_name(symbol, gran)
+        self.storage.finish(name)
+        if env.is_trade_time(symbol, data["datetime"]):
+            doc = transform(data)
+            doc["flag"] = 0
+            self.storage.put(name, doc)
+            logging.warning("write | new bar | %s", data)
+        if gran == "M1":
+            t = data["datetime"]
+            time = t.hour*10000+t.minute*100
+            self.send_bar_req(symbol, time)
+
+    def handle_upd(self, symbol, gran, data):
+        name = env.get_table_name(symbol, gran)
+        if env.is_trade_time(symbol, data["datetime"]):
+            doc = transform(data)
+            self.storage.put(name, doc)
 
     def handle(self, tick):
         for gran, change in self.bars.on_tick(tick).items():
             tag, data = change
-            name = env.get_table_name(tick.symbol, gran)
-            if data:
-                if env.is_trade_time(tick.symbol, data["datetime"]):
-                    doc = transform(data)
-                    self.storage.put(name, doc)
-            if tag == NEW and (gran == "M1"):
-                logging.warning("write | new bar | %s", data)
-                t = data["datetime"]
-                time = t.hour*10000+t.minute*100
-                self.send_bar_req(tick.symbol, time)
+            method = self.methods[tag]
+            method(tick.symbol, gran, data)
+            # name = env.get_table_name(tick.symbol, gran)
+            # if data:
+            #     if env.is_trade_time(tick.symbol, data["datetime"]):
+            #         doc = transform(data)
+            #         if tag == NEW:
+            #             self.storage.finish(name)
+            #         self.storage.put(name, doc)
+            #     else:
+            #         self.storage.finish(name)
+            # if tag == NEW and (gran == "M1"):
+            #     logging.warning("write | new bar | %s", data)
+            #     t = data["datetime"]
+            #     time = t.hour*10000+t.minute*100
+            #     self.send_bar_req(tick.symbol, time)
     
     def send_bar_req(self, symbol, time):
         req = make_bar_req(symbol, time, time)
