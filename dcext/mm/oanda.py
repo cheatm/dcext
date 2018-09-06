@@ -259,6 +259,7 @@ class MongoDBBarHandler(MongoDBHandler):
         if doc:
             t = doc["datetime"]
             doc["datetime"] = datetime.strptime(t, self.DATETIME_FORMAT).replace(tzinfo=self.tz)
+            doc.pop("flag", None)
             self.bars[inst, gran] = doc
             req["start"] = doc["datetime"]
         else:
