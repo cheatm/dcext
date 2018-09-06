@@ -238,6 +238,9 @@ class MongoDBBarHandler(MongoDBHandler):
             if not complete:
                 self.bars[inst, gran] = bar
                 logging.warning("write bar | %s | %s | bar not complete", inst, gran)
+                bar["flag"] = 0
+            else:
+                bar["flag"] = 1
             self.transform(bar)
             logging.warning("write bar | %s | %s | %s", inst, gran, bar)
             self.storage.put(name, bar)
@@ -282,16 +285,19 @@ class MongoDBTickHandler(MongoDBHandler):
             method(inst, gran, data)
     
     def new_candle(self, inst, gran, data):
+        name = self.table_name(inst, gran)
+        self.storage.finish(name)
         date = data["datetime"] - timedelta(minutes=1)
         self.transform(data)
-        self.storage.put(self.table_name(inst, gran), data)
+        data["flag"] = 0
+        self.storage.put(name, data)
         self.queue.put({INSTRUMENT: inst, GRANULARITY: gran, COUNT: 1, "start": date})
         logging.warning("new bar | %s | %s | %s", inst, gran, data)
     
     def update_candle(self, inst, gran, data):
         self.transform(data)
         self.storage.put(self.table_name(inst, gran), data)
-            
+
 
 def command(config_file):
     import json
@@ -317,7 +323,15 @@ def run(instrument, granularity, mongodb_uri, db_name):
     ocp = OandaCandlePublisher(api, q)
     mbh = MongoDBBarHandler(bars, storage, q, inst_grans)
     mth = MongoDBTickHandler(bars, storage, q)
-    
+
+    while(q.qsize()):
+        req = q.get()
+        try:
+            doc = ocp.get(**req)
+            mbh.handle(doc)
+        except Exception as e:
+            logging.error("load before start | %s | %s", req, e)
+        
     core = CoreEngine()
     core.register_publisher("osp", osp)
     core.register_publisher("ocp", ocp)

@@ -1,0 +1,14 @@
+version: '3'
+services:
+  oanda: 
+    container_name: dcext_oanda
+    image: "dcext"
+    network_mode: "host"
+    command: "python dcext/mm/oanda.py"
+    environment:
+      OANDA_ACCOUNTID: ""
+      OANDA_TOKEN: ""
+      ETC_PATH: "/app/etc"
+      ONADA_TYPE: "PRACTICE"
+    volumes:
+      - ./oanda.json:/app/etc/oanda.json
