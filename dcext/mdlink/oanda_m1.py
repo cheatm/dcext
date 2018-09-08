@@ -327,18 +327,5 @@ def command(command, instruments, start, end, filled=False, redo=3, filename="oa
             fw.ensure(instruments)
 
 
-def test():
-    symbols = ["EUR_USD", "USD_JPY", "AUD_USD", "USD_CAD", "GBP_USD", "USD_CNH", "HK33_HKD", "NAS100_USD", "XAU_USD", "WTICO_USD"]
-    start = 20170101
-    end = 20180825
-    api = API()
-    storage = MongodbStorage("192.168.0.104,192.168.0.105")
-    fw = Framework(api, storage)
-    
-    # fw.create(symbols, start, end)
-    fw.publish(redo=-1)
-
-
 if __name__ == '__main__':
-    # test()
     command() 

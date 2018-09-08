@@ -19,6 +19,11 @@ echo "[DOANLOAD DATA] start at `date +%Y-%m-%dT%H:%M:%S`"
 python dcext/mdlink/oanda_m1.py -n etc/oanda_m1.json publish
 echo "[DOANLOAD DATA] accomplish at `date +%Y-%m-%dT%H:%M:%S`"
 
+echo "[ENSURE INDEX] start at `date +%Y-%m-%dT%H:%M:%S`"
+python dcext/mdlink/oanda_m1.py -n etc/oanda_m1.json ensure
+echo "[ENSURE INDEX] accomplish at `date +%Y-%m-%dT%H:%M:%S`"
+
+
 
 while true
 do
