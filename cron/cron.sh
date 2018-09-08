@@ -11,6 +11,14 @@ echo Start OANDA M1 data collector.
 echo "Time to create index set at ${ctime[*]}"
 echo "Time to download data set at ${ptime[*]}"
 
+echo "[CREATE INDEX] start at `date +%Y-%m-%dT%H:%M:%S`"
+python dcext/mdlink/oanda_m1.py -n etc/oanda_m1.json create
+echo "[CREATE INDEX] accomplish at `date +%Y-%m-%dT%H:%M:%S`"
+
+echo "[DOANLOAD DATA] start at `date +%Y-%m-%dT%H:%M:%S`"
+python dcext/mdlink/oanda_m1.py -n etc/oanda_m1.json publish
+echo "[DOANLOAD DATA] accomplish at `date +%Y-%m-%dT%H:%M:%S`"
+
 
 while true
 do
