@@ -133,13 +133,16 @@ class OandaCandlePublisher(Publisher):
                 yield REQ_BAR, doc
 
 
+FREQS = {
+    "M1": Bar1M,
+    "M3": Bar1M.freq(3)
+}
+
+
 class BarsInstance(object):
     
-    granularities = {
-        "M1": Bar1M
-    }
-
-    def __init__(self):
+    def __init__(self, granularities):
+        self.granularities = granularities
         self.bars = {}
     
     @staticmethod
@@ -315,7 +318,7 @@ def run(instrument, granularity, mongodb_uri, db_name):
 
     api = OandaAPI(TOKEN)
     q = Queue()
-    bars = BarsInstance()
+    bars = BarsInstance({gran: FREQS[gran] for gran in granularity})
     storage = MongodbBarAppender.config(
         mongodb_uri, db_name, tables, ["datetime"],
         size=2**25, max=1000

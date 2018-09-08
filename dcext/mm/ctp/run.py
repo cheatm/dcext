@@ -1,6 +1,6 @@
 from dcext.mm.storage import MongodbBarAppender, MongoDBCappedCointainer
 from dcext.mm.message import QuotePublisher, get_sub_sock
-from dcext.framework.bars import Handler, Publisher, CoreEngine, VBar1M, NEW, UPD, OLD
+from dcext.framework.bars import Handler, Publisher, CoreEngine, VBar1M, VBar1H, NEW, UPD, OLD
 from dcext.mm.ctp.proto import make_bar_req, BarResp
 from datetime import datetime, timedelta
 from dcext.zeromq import get_publish_sock
@@ -21,13 +21,24 @@ class Tick:
         self.volume = volume
 
 
+GRANULARITIES = {
+    "M1": VBar1M,
+    "M3": VBar1M.freq(3),
+    "M5": VBar1M.freq(5),
+    "M15": VBar1M.freq(15),
+    "M30": VBar1M.freq(30),
+    "H1": VBar1H,
+}
+
+
 class BarsInstance(object):
     
     granularities = {
-        "M1": VBar1M
+        "M1": VBar1M, 
     }
 
-    def __init__(self):
+    def __init__(self, granularities):
+        self.granularities = granularities
         self.bars = {}
     
     @staticmethod
@@ -44,8 +55,9 @@ class BarsInstance(object):
         try:
             bars = self.bars[tick.symbol]
         except KeyError:
-            bars = {gran: cls(tick.time - timedelta(minutes=1), tick.price, tick.price, tick.price, tick.price, tick.volume, tick.volume) for gran, cls in self.granularities.items()}
+            bars = {gran: cls(tick.time, tick.price, tick.price, tick.price, tick.price, tick.volume, tick.volume) for gran, cls in self.granularities.items()}
             self.bars[tick.symbol] = bars
+            return {gran: (NEW, bar.to_dict()) for gran, bar in bars.items()}
         
         results = {}
         for gran, bar in bars.items():
@@ -78,9 +90,10 @@ class BarsInstance(object):
 
 class BarsStorage(Handler):
 
-    def __init__(self, storage, addr):
+    def __init__(self, storage, addr, bars):
         assert isinstance(storage, MongodbBarAppender)
-        self.bars = BarsInstance()
+        assert isinstance(bars, BarsInstance)
+        self.bars = bars
         self.storage = storage
         self.addr = addr
         self.sock = get_publish_sock(addr)
@@ -88,25 +101,24 @@ class BarsStorage(Handler):
         self.methods = {
             NEW: self.handle_new,
             UPD: self.handle_upd,
-            OLD: lambda symbol, gran, data:None,
+            OLD: lambda symbol, gran, data, time:None,
         }
     
-    def handle_new(self, symbol, gran, data):
+    def handle_new(self, symbol, gran, data, time):
         name = env.get_table_name(symbol, gran)
         self.storage.finish(name)
-        if env.is_trade_time(symbol, data["datetime"]):
+        if env.is_trade_time(symbol, time):
             doc = transform(data)
             doc["flag"] = 0
             self.storage.put(name, doc)
-            logging.warning("write | new bar | %s", data)
+            logging.warning("write | new bar | %s | %s | %s", symbol, gran, data)
         if gran == "M1":
             t = data["datetime"]
-            time = t.hour*10000+t.minute*100
-            self.send_bar_req(symbol, time)
+            self.send_bar_req(symbol, t.hour*10000+t.minute*100)
 
-    def handle_upd(self, symbol, gran, data):
+    def handle_upd(self, symbol, gran, data, time):
         name = env.get_table_name(symbol, gran)
-        if env.is_trade_time(symbol, data["datetime"]):
+        if env.is_trade_time(symbol, time):
             doc = transform(data)
             self.storage.put(name, doc)
 
@@ -114,21 +126,7 @@ class BarsStorage(Handler):
         for gran, change in self.bars.on_tick(tick).items():
             tag, data = change
             method = self.methods[tag]
-            method(tick.symbol, gran, data)
-            # name = env.get_table_name(tick.symbol, gran)
-            # if data:
-            #     if env.is_trade_time(tick.symbol, data["datetime"]):
-            #         doc = transform(data)
-            #         if tag == NEW:
-            #             self.storage.finish(name)
-            #         self.storage.put(name, doc)
-            #     else:
-            #         self.storage.finish(name)
-            # if tag == NEW and (gran == "M1"):
-            #     logging.warning("write | new bar | %s", data)
-            #     t = data["datetime"]
-            #     time = t.hour*10000+t.minute*100
-            #     self.send_bar_req(tick.symbol, time)
+            method(tick.symbol, gran, data, tick.time)
     
     def send_bar_req(self, symbol, time):
         req = make_bar_req(symbol, time, time)
@@ -160,7 +158,6 @@ class TickPublisher(QuotePublisher):
 
     def __init__(self, addr, mapper):
         super(TickPublisher, self).__init__(addr)
-        print()
         self.mapper = mapper
 
     def __iter__(self):
@@ -204,15 +201,17 @@ class BarReceiver(Publisher):
 
 
 def run():
+    from itertools import product
 
     qp = TickPublisher(env.tick_subscribe, env.mapper)
     appender = MongodbBarAppender.config(
         env.mongodb_uri, env.mongodb_db,
-        [env.get_table_name(name, "M1") for name in env.listen_symbol],
+        [env.get_table_name(symbol, gran) for symbol, gran in product(env.listen_symbol, env.listen_freq)],
         ["datetime"], size=2**25, max=1000
     )
 
-    handler = BarsStorage(appender, env.tick_publish)
+    bars = BarsInstance({freq: GRANULARITIES[freq] for freq in env.listen_freq})
+    handler = BarsStorage(appender, env.tick_publish, bars)
     core = CoreEngine()
     core.register_publisher("qp", qp)
     core.register_handler(TICK, handler)

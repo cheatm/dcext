@@ -76,13 +76,25 @@ class MinuteDelta(object):
         return time.replace(minute=minutes, second=0, microsecond=0)
 
 
-class Bar1M(Bar, MinuteDelta):
+class Bar1M(Bar):
 
     DELTA = 1
+    NAMEFORMAT = "Bar%dM"
 
     def __init__(self, datetime, open=FLOAT, high=FLOAT, low=FLOAT, close=FLOAT, volume=INT):
-        MinuteDelta.__init__(self)
+        self.init_delta()
         super(Bar1M, self).__init__(self.standart_time(datetime), open, high, low, close, volume)
+
+    @classmethod
+    def freq(cls, delta):
+        return type(cls.NAMEFORMAT % delta, (cls,), {"DELTA": delta})
+
+    def init_delta(self):
+        self.delta = timedelta(minutes=self.DELTA)
+    
+    def standart_time(self, time):
+        minutes = time.minute - time.minute % self.DELTA
+        return time.replace(minute=minutes, second=0, microsecond=0)
 
     def on_tick(self, time, price, volume=INT):
         if time - self.datetime >= self.delta:
@@ -95,6 +107,18 @@ class Bar1M(Bar, MinuteDelta):
                 return UPD, changed 
             else:
                 return OLD, None
+
+
+class Bar1H(Bar1M):
+
+    NAMEFORMAT = "Bar%dH"
+
+    def init_delta(self):
+        self.delta = timedelta(hours=self.DELTA)
+    
+    def standart_time(self, time):
+        hour = time.hour - time.hour % self.DELTA
+        return time.replace(hour=hour, minute=0, second=0, microsecond=0)
 
 
 class VBar(object):
@@ -145,13 +169,25 @@ class VBar(object):
             return dct
 
 
-class VBar1M(VBar, MinuteDelta):
+class VBar1M(VBar):
 
+    NAMEFORMAT = "VBar%dM"
     DELTA = 1
 
     def __init__(self, datetime, open=FLOAT, high=FLOAT, low=FLOAT, close=FLOAT, init_volume=INT, last_volume=INT):
-        MinuteDelta.__init__(self)
+        self.init_delta()
         super(VBar1M, self).__init__(self.standart_time(datetime), open, high, low, close, init_volume, last_volume)
+
+    @classmethod
+    def freq(cls, delta):
+        return type(cls.NAMEFORMAT % delta, (cls,), {"DELTA": delta})
+
+    def init_delta(self):
+        self.delta = timedelta(minutes=self.DELTA)
+    
+    def standart_time(self, time):
+        minutes = time.minute - time.minute % self.DELTA
+        return time.replace(minute=minutes, second=0, microsecond=0)
 
     def on_tick(self, time, price, volume=INT):
         if time - self.datetime >= self.delta:
@@ -164,7 +200,19 @@ class VBar1M(VBar, MinuteDelta):
                 return UPD, changed
             else:
                 return OLD, None
-        
+
+
+class VBar1H(VBar1M):
+
+    NAMEFORMAT = "VBar%dH"
+
+    def init_delta(self):
+        self.delta = timedelta(hours=self.DELTA)
+    
+    def standart_time(self, time):
+        hour = time.hour - time.hour % self.DELTA
+        return time.replace(hour=hour, minute=0, second=0, microsecond=0)
+
 
 class Handler(object):
 
