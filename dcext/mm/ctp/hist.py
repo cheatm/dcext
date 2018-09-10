@@ -28,7 +28,6 @@ def history(host, db, symbols, api, trade_days, freqs, max=1000):
             data = create(api, symbol, dates, freq, max)
         data["flag"] = 1
         data = data[data["datetime"].apply(partial(env.is_trade_time, symbol))]
-        print(data)
         for doc in data.to_dict("record"):
             doc["datetime"] = doc["datetime"].strftime("%Y%m%d %H:%M:%S")
             doc["volume"] = int(doc["volume"])
