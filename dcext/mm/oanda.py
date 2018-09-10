@@ -332,6 +332,14 @@ def run(instrument, granularity, mongodb_uri, db_name):
     ocp = OandaCandlePublisher(api, q)
     mbh = MongoDBBarHandler(bars, storage, q, inst_grans)
     mth = MongoDBTickHandler(bars, storage, q)
+        
+    core = CoreEngine()
+    core.register_publisher("osp", osp)
+    core.register_publisher("ocp", ocp)
+    core.register_handler(TICK_STREAM, mth)
+    core.register_handler(REQ_BAR, mbh)
+    core._running = True
+    core.start_publisher("osp")
 
     while(q.qsize()):
         req = q.get()
@@ -340,12 +348,7 @@ def run(instrument, granularity, mongodb_uri, db_name):
             mbh.handle(doc)
         except Exception as e:
             logging.error("load before start | %s | %s", req, e)
-        
-    core = CoreEngine()
-    core.register_publisher("osp", osp)
-    core.register_publisher("ocp", ocp)
-    core.register_handler(TICK_STREAM, mth)
-    core.register_handler(REQ_BAR, mbh)
+
     core.start()
 
 

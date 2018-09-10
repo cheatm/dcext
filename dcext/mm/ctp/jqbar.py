@@ -83,14 +83,6 @@ class ReqestHandler(Handler):
                     data
                 )
             
-        # with self as api:
-        #     data, msg = getattr(api, method)(**params)
-        #     data["flag"] = 1
-        #     if msg == "0,":
-        #         self.send(params["symbol"], data)
-        #     else:
-        #         logging.error("require bar error | %s", msg)
-    
     def send(self, symbol, data):
         for doc in data[STORAGE_COLUMNS].to_dict("record"):
             doc["volume"] = int(doc["volume"])

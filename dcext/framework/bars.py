@@ -308,10 +308,10 @@ class CoreEngine(object):
         if name in self.threads:
             thread = self.threads[name]
             if thread.is_alive():
-                logging.warning("Publish thread | %s | already start")
+                logging.warning("Publish thread | %s | already start", name)
                 return
             else:
-                logging.warning("Publish thread | %s | not alive, create new thread")
+                logging.warning("Publish thread | %s | not alive, create new thread", name)
         
         thread = Thread(target=self.run_publisher, daemon=True, args=(name, ))
         self.threads[name] = thread
