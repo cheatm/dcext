@@ -32,6 +32,7 @@ listen_freq = {"M1"}
 mapper = {}
 dates = []
 timelimit = {}
+market_time_limit = {}
 
 INSTRUMENTS = None
 
@@ -43,6 +44,11 @@ def init(*filename, **default):
         default[key] = os.path.join(root, value)
     default.update(conf)
     load(**default)
+
+
+def set_timelimits(insts, symbols):
+    for symbol  in symbols:
+        timelimit[symbol] = market_time_limit.get(insts.loc[symbol, "market"], tuple())
 
 
 def load(config, inst="", calendar="", market=""):
@@ -69,9 +75,8 @@ def load(config, inst="", calendar="", market=""):
             mapper[insts.loc[symbol, "jzcode"]] = symbol 
         if market:
             logging.warning("config | market file | %s", market)
-            limits = market_time_limit(market)
-            for symbol  in listen_symbol:
-                timelimit[symbol] = limits.get(insts.loc[symbol, "market"], tuple())
+            set_market_time_limit(market)
+            set_timelimits(insts, listen_symbol)
         globals()["INSTRUMENTS"] = insts.reset_index()
 
     if calendar:
@@ -103,9 +108,8 @@ def get_table_name(name, gran):
     return "%s_%s" % (mapped, gran)
 
 
-def market_time_limit(filename):
+def set_market_time_limit(filename):
     market = pd.read_csv(filename, index_col="market")
-    limits = {}
     for code in market.index:
         l = []
         for i in range(1, 5):
@@ -117,8 +121,7 @@ def market_time_limit(filename):
                 l.append((time(0, 0, 0), split(end)))
             else:
                 break
-        limits[code] = tuple(l)
-    return limits
+        market_time_limit[code] = tuple(l)
             
 
 def split(n):

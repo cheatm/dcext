@@ -4,6 +4,7 @@ from jaqs.data import DataApi
 import pandas as pd
 from datetime import datetime, timedelta
 from itertools import product
+from functools import partial
 import logging
 
 
@@ -26,6 +27,8 @@ def history(host, db, symbols, api, trade_days, freqs, max=1000):
             dates = find(trade_days, date2int(datetime.now()))
             data = create(api, symbol, dates, freq, max)
         data["flag"] = 1
+        data = data[data["datetime"].apply(partial(env.is_trade_time, symbol))]
+        print(data)
         for doc in data.to_dict("record"):
             doc["datetime"] = doc["datetime"].strftime("%Y%m%d %H:%M:%S")
             doc["volume"] = int(doc["volume"])
@@ -154,6 +157,7 @@ def run():
     for symbol in env.listen_symbol:
         tjzcode = symbol_map.loc[symbol, "targetjzcode"]
         symbols.append(jzcode_map.loc[tjzcode, "symbol"])
+    env.set_timelimits(symbol_map, symbols)
     api = get_api()
     history(
         env.mongodb_uri, env.mongodb_db,
@@ -163,7 +167,7 @@ def run():
 
 def main():
     import sys
-    env.init(*sys.argv[1:], config="ctp.json", calendar="calendar.csv", inst="instrument.csv")
+    env.init(*sys.argv[1:], config="ctp.json", calendar="calendar.csv", inst="instrument.csv", market="market.csv")
     run()
 
 
