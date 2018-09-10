@@ -1,4 +1,4 @@
-from dcext.framework.bars import Handler, Publisher, CoreEngine, Bar1M, NEW, UPD, OLD
+from dcext.framework.bars import Handler, Publisher, CoreEngine, Bar1M, Bar1H, NEW, UPD, OLD
 from dcext.oanda.stream import OandaPriceStream, OandaCandleUpdater, LOG, MESSAGE
 from dcext.oanda.api import TOKEN, OandaAPI
 from dcext.oanda.api import CANDLES as CANDLES_URL
@@ -135,7 +135,12 @@ class OandaCandlePublisher(Publisher):
 
 FREQS = {
     "M1": Bar1M,
-    "M3": Bar1M.freq(3)
+    "M3": Bar1M.freq(3),
+    "M5": Bar1M.freq(5),
+    "M15": Bar1M.freq(15),
+    "M30": Bar1M.freq(30),
+    "H1": Bar1H,
+    "H3": Bar1H.freq(3)
 }
 
 

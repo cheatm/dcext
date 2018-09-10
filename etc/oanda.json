@@ -1,6 +1,0 @@
-{
-    "instrument": ["XAU_USD", "EUR_USD"],
-    "granularity": ["M1"],
-    "mongodb_uri": "localhost",
-    "db_name": "oanda"
-}

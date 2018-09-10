@@ -90,6 +90,15 @@ class BarsInstance(object):
 
 class BarsStorage(Handler):
 
+    gran_diff = {
+        "M1": timedelta(),
+        "M3": timedelta(minutes=2),
+        "M5": timedelta(minutes=4),
+        "M15": timedelta(minutes=14),
+        "M30": timedelta(minutes=29),
+        "H1": timedelta(minutes=59),
+    }
+
     def __init__(self, storage, addr, bars):
         assert isinstance(storage, MongodbBarAppender)
         assert isinstance(bars, BarsInstance)
@@ -112,9 +121,10 @@ class BarsStorage(Handler):
             doc["flag"] = 0
             self.storage.put(name, doc)
             logging.warning("write | new bar | %s | %s | %s", symbol, gran, data)
-        if gran == "M1":
-            t = data["datetime"]
-            self.send_bar_req(symbol, t.hour*10000+t.minute*100)
+
+        end = data["datetime"]
+        start = end - self.gran_diff[gran]
+        self.send_bar_req(symbol, start.hour*10000+start.minute*100, end.hour*10000+end.minute*100, freq=gran)
 
     def handle_upd(self, symbol, gran, data, time):
         name = env.get_table_name(symbol, gran)
@@ -128,10 +138,9 @@ class BarsStorage(Handler):
             method = self.methods[tag]
             method(tick.symbol, gran, data, tick.time)
     
-    def send_bar_req(self, symbol, time):
-        req = make_bar_req(symbol, time, time)
+    def send_bar_req(self, symbol, start, end, freq):
+        req = make_bar_req(symbol, start, end, freq=freq)
         self.sock.send(req)
-
 
 
 def transform(bar):

@@ -17,6 +17,7 @@ message BarReq{
     required int32 start_time = 2;
     required int32 end_time = 3;
     required int32 trade_date = 4;
+    required string freq = 5;
 }
 
 message Bar{

@@ -141,9 +141,14 @@ def get_today_int():
     return dt.year*10000 + dt.month*100 + dt.day
 
 
-def run():
+def get_api():
     api = DataApi(env.jaqs_addr)
     api.login(env.jaqs_user, env.jaqs_password)
+    return api
+
+
+def run():
+    api = get_api()
     history(
         env.mongodb_uri, env.mongodb_db,
         env.listen_symbol, api, env.dates, env.listen_freq

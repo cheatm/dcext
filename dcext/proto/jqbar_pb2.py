@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='',
   syntax='proto2',
   serialized_options=None,
-  serialized_pb=_b('\n\x0bjqbar.proto\"\'\n\tJQMessage\x12\x0c\n\x04type\x18\x01 \x02(\x05\x12\x0c\n\x04\x62ody\x18\x02 \x02(\t\"R\n\x06\x42\x61rReq\x12\x0e\n\x06symbol\x18\x01 \x02(\t\x12\x12\n\nstart_time\x18\x02 \x02(\x05\x12\x10\n\x08\x65nd_time\x18\x03 \x02(\x05\x12\x12\n\ntrade_date\x18\x04 \x02(\x05\"i\n\x03\x42\x61r\x12\x0c\n\x04\x64\x61te\x18\x01 \x02(\x05\x12\x0c\n\x04time\x18\x02 \x02(\x05\x12\x0c\n\x04open\x18\x03 \x02(\x01\x12\x0c\n\x04high\x18\x04 \x02(\x01\x12\x0b\n\x03low\x18\x05 \x02(\x01\x12\r\n\x05\x63lose\x18\x06 \x02(\x01\x12\x0e\n\x06volume\x18\x07 \x02(\x05\"-\n\x07\x42\x61rResp\x12\x0e\n\x06symbol\x18\x01 \x02(\t\x12\x12\n\x04\x62\x61rs\x18\x02 \x03(\x0b\x32\x04.Bar*1\n\x0bMessageType\x12\x0b\n\x07\x42\x41R_REQ\x10\x01\x12\x0c\n\x08\x42\x41R_RESP\x10\x02\x12\x07\n\x03\x42\x41R\x10\x03')
+  serialized_pb=_b('\n\x0bjqbar.proto\"\'\n\tJQMessage\x12\x0c\n\x04type\x18\x01 \x02(\x05\x12\x0c\n\x04\x62ody\x18\x02 \x02(\t\"`\n\x06\x42\x61rReq\x12\x0e\n\x06symbol\x18\x01 \x02(\t\x12\x12\n\nstart_time\x18\x02 \x02(\x05\x12\x10\n\x08\x65nd_time\x18\x03 \x02(\x05\x12\x12\n\ntrade_date\x18\x04 \x02(\x05\x12\x0c\n\x04\x66req\x18\x05 \x02(\t\"i\n\x03\x42\x61r\x12\x0c\n\x04\x64\x61te\x18\x01 \x02(\x05\x12\x0c\n\x04time\x18\x02 \x02(\x05\x12\x0c\n\x04open\x18\x03 \x02(\x01\x12\x0c\n\x04high\x18\x04 \x02(\x01\x12\x0b\n\x03low\x18\x05 \x02(\x01\x12\r\n\x05\x63lose\x18\x06 \x02(\x01\x12\x0e\n\x06volume\x18\x07 \x02(\x05\"-\n\x07\x42\x61rResp\x12\x0e\n\x06symbol\x18\x01 \x02(\t\x12\x12\n\x04\x62\x61rs\x18\x02 \x03(\x0b\x32\x04.Bar*1\n\x0bMessageType\x12\x0b\n\x07\x42\x41R_REQ\x10\x01\x12\x0c\n\x08\x42\x41R_RESP\x10\x02\x12\x07\n\x03\x42\x41R\x10\x03')
 )
 
 _MESSAGETYPE = _descriptor.EnumDescriptor(
@@ -44,8 +44,8 @@ _MESSAGETYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=294,
-  serialized_end=343,
+  serialized_start=308,
+  serialized_end=357,
 )
 _sym_db.RegisterEnumDescriptor(_MESSAGETYPE)
 
@@ -129,6 +129,13 @@ _BARREQ = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='freq', full_name='BarReq.freq', index=4,
+      number=5, type=9, cpp_type=9, label=2,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -142,7 +149,7 @@ _BARREQ = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=56,
-  serialized_end=138,
+  serialized_end=152,
 )
 
 
@@ -214,8 +221,8 @@ _BAR = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=140,
-  serialized_end=245,
+  serialized_start=154,
+  serialized_end=259,
 )
 
 
@@ -252,8 +259,8 @@ _BARRESP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=247,
-  serialized_end=292,
+  serialized_start=261,
+  serialized_end=306,
 )
 
 _BARRESP.fields_by_name['bars'].message_type = _BAR

@@ -6,7 +6,11 @@ from datetime import time
 import os
 
 
-logging.basicConfig(stream=sys.stdout)
+logging.basicConfig(
+    stream=sys.stdout, 
+    format="%(asctime)s | %(levelname)s | %(filename)s:%(lineno)d | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
 
 
 jaqs_addr = "tcp://data.quantos.org:8910"

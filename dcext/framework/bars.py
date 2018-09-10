@@ -84,6 +84,7 @@ class Bar1M(Bar):
     def __init__(self, datetime, open=FLOAT, high=FLOAT, low=FLOAT, close=FLOAT, volume=INT):
         self.init_delta()
         super(Bar1M, self).__init__(self.standart_time(datetime), open, high, low, close, volume)
+        self.endtime = self.datetime + self.delta
 
     @classmethod
     def freq(cls, delta):
@@ -97,16 +98,19 @@ class Bar1M(Bar):
         return time.replace(minute=minutes, second=0, microsecond=0)
 
     def on_tick(self, time, price, volume=INT):
-        if time - self.datetime >= self.delta:
-            self.__init__(time, price, price, price, price, volume)
-            return NEW, self.to_dict()
-        else:
-            changed = self.update(price, volume if volume else self.volume)
-            if changed:
-                changed["datetime"] = self.datetime
-                return UPD, changed 
+        if time >= self.datetime:
+            if time < self.endtime:
+                changed = self.update(price, volume if volume else self.volume)
+                if changed:
+                    changed["datetime"] = self.datetime
+                    return UPD, changed 
+                else:
+                    return OLD, None
             else:
-                return OLD, None
+                self.__init__(time, price, price, price, price, volume)
+                return NEW, self.to_dict()
+        else:
+            return OLD, None
 
 
 class Bar1H(Bar1M):
@@ -177,6 +181,7 @@ class VBar1M(VBar):
     def __init__(self, datetime, open=FLOAT, high=FLOAT, low=FLOAT, close=FLOAT, init_volume=INT, last_volume=INT):
         self.init_delta()
         super(VBar1M, self).__init__(self.standart_time(datetime), open, high, low, close, init_volume, last_volume)
+        self.endtime = self.datetime + self.delta
 
     @classmethod
     def freq(cls, delta):
@@ -190,16 +195,19 @@ class VBar1M(VBar):
         return time.replace(minute=minutes, second=0, microsecond=0)
 
     def on_tick(self, time, price, volume=INT):
-        if time - self.datetime >= self.delta:
-            self.__init__(time, price, price, price, price, self.last_volume, volume)
-            return NEW, self.to_dict()
-        else:
-            changed = self.update(price, volume)
-            if changed:
-                changed["datetime"] = self.datetime
-                return UPD, changed
+        if time >= self.datetime:
+            if time < self.endtime:
+                changed = self.update(price, volume)
+                if changed:
+                    changed["datetime"] = self.datetime
+                    return UPD, changed
+                else:
+                    return OLD, None
             else:
-                return OLD, None
+                self.__init__(time, price, price, price, price, self.last_volume, volume)
+                return NEW, self.to_dict()
+        else:
+            return OLD, None
 
 
 class VBar1H(VBar1M):

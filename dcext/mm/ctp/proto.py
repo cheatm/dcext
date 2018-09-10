@@ -35,6 +35,6 @@ def make_jq_str(msg_type, **kwargs):
     return jq.SerializeToString()
 
 
-def make_bar_req(symbol, start_time=200000, end_time=160000, trade_date=0):
-    msg = make_msg(BAR_REQ, symbol=symbol, start_time=start_time, end_time=end_time, trade_date=trade_date)
+def make_bar_req(symbol, start_time=200000, end_time=160000, trade_date=0, freq="M1"):
+    msg = make_msg(BAR_REQ, symbol=symbol, start_time=start_time, end_time=end_time, trade_date=trade_date, freq=freq)
     return msg.SerializeToString()

@@ -1,5 +1,6 @@
 #! encoding:utf-8
 from dcext.framework.bars import Publisher, Handler, CoreEngine
+from dcext.mm.ctp.hist import get_bar
 from dcext.zeromq import get_publish_sock, subscribe
 from jaqs.data import DataApi
 from pymongo.database import Database
@@ -32,16 +33,14 @@ class RequestReceiver(Publisher):
         for msg in subscribe(self.addr):
             req = self.parse(msg)
             if req:
-                doc = {
-                    METHOD: "bar",
-                    PARAMS: {
-                        "symbol": req.symbol, 
-                        "start_time": req.start_time, 
-                        "end_time": req.end_time,
-                        "trade_date": req.trade_date,
-                    }
+                params = {
+                    "symbol": req.symbol, 
+                    "start_time": req.start_time, 
+                    "end_time": req.end_time,
+                    "trade_date": req.trade_date,
+                    "freq": req.freq
                 }
-                yield REQUEST, doc
+                yield REQUEST, params
     
     @staticmethod
     def parse(msg):
@@ -72,20 +71,30 @@ class ReqestHandler(Handler):
         self.api.logout()
     
     def handle(self, req):
-        method, params = req[METHOD], req[PARAMS]
-        logging.warning("received bar req | %s | %s", method, params)
+        logging.warning("received bar req | %s", req)
         with self as api:
-            data, msg = getattr(api, method)(**params)
-            data["flag"] = 1
-            if msg == "0,":
-                self.send(params["symbol"], data)
+            try:
+                data = get_bar(api, **req)
+            except Exception as e:
+                logging.error("require bar error | %s", e)
             else:
-                logging.error("require bar error | %s", msg)
+                self.send(
+                    env.get_table_name(req["symbol"], req["freq"]),
+                    data
+                )
+            
+        # with self as api:
+        #     data, msg = getattr(api, method)(**params)
+        #     data["flag"] = 1
+        #     if msg == "0,":
+        #         self.send(params["symbol"], data)
+        #     else:
+        #         logging.error("require bar error | %s", msg)
     
     def send(self, symbol, data):
-        data["datetime"] = list(map(make_time, data["date"], data["time"]))
         for doc in data[STORAGE_COLUMNS].to_dict("record"):
             doc["volume"] = int(doc["volume"])
+            doc["flag"] = 1
             self.storage.put(symbol, doc)
             logging.warning("update bar | %s | %s", symbol, doc)
 
@@ -113,13 +122,12 @@ class BarStorage(object):
         from pymongo import MongoClient
         return cls(MongoClient(host)[db])
 
-    def put(self, symbol, doc):
-        name = env.get_table_name(symbol, "M1")
+    def put(self, name, doc):
         dt = doc.pop("datetime").strftime("%Y%m%d %H:%M:%S")
         try:
             self.db[name].update_one({"datetime": dt}, {"$set": doc})
         except Exception as e:
-            logging.error("write db | %s | %s | %s | %s", symbol, dt, doc, e)
+            logging.error("write db | %s | %s | %s | %s", name, dt, doc, e)
     
 
 
