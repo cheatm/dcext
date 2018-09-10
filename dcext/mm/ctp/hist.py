@@ -148,16 +148,22 @@ def get_api():
 
 
 def run():
+    symbol_map = env.INSTRUMENTS.set_index("symbol")
+    jzcode_map = env.INSTRUMENTS.set_index("jzcode")
+    symbols = []
+    for symbol in env.listen_symbol:
+        tjzcode = symbol_map.loc[symbol, "targetjzcode"]
+        symbols.append(jzcode_map.loc[tjzcode, "symbol"])
     api = get_api()
     history(
         env.mongodb_uri, env.mongodb_db,
-        env.listen_symbol, api, env.dates, env.listen_freq
+        symbols, api, env.dates, env.listen_freq
     )
 
 
 def main():
     import sys
-    env.init(*sys.argv[1:], config="ctp.json", calendar="calendar.csv")
+    env.init(*sys.argv[1:], config="ctp.json", calendar="calendar.csv", inst="instrument.csv")
     run()
 
 

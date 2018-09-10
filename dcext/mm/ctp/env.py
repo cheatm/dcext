@@ -33,6 +33,8 @@ mapper = {}
 dates = []
 timelimit = {}
 
+INSTRUMENTS = None
+
 
 def init(*filename, **default):
     conf = dict([name.split("=", 1) for name in filename])
@@ -70,10 +72,12 @@ def load(config, inst="", calendar="", market=""):
             limits = market_time_limit(market)
             for symbol  in listen_symbol:
                 timelimit[symbol] = limits.get(insts.loc[symbol, "market"], tuple())
+        globals()["INSTRUMENTS"] = insts.reset_index()
 
     if calendar:
         logging.warning("config | calendar | %s", calendar)
         globals()["dates"] = pd.read_csv(calendar)["date"]
+
 
 
 def is_trade_time(symbol, dt):
