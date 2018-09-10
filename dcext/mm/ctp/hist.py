@@ -27,7 +27,6 @@ def history(host, db, symbols, api, trade_days, freqs, max=1000):
             dates = find(trade_days, date2int(datetime.now()))
             data = create(api, symbol, dates, freq, max)
         data["flag"] = 1
-        data = data[data["datetime"].apply(partial(env.is_trade_time, symbol))]
         for doc in data.to_dict("record"):
             doc["datetime"] = doc["datetime"].strftime("%Y%m%d %H:%M:%S")
             doc["volume"] = int(doc["volume"])
@@ -113,7 +112,9 @@ def bars(api, symbol, trade_days, freq, retry=3):
     while retry and (point >= 0):
         date = trade_days[point]
         try:
-            yield get_bar(api, symbol, date, freq)
+            data = get_bar(api, symbol, date, freq)
+            data = data[data["datetime"].apply(partial(env.is_trade_time, symbol))]
+            yield data
         except Exception as e:
             logging.error("get bar | %s | %s | %s | %s", symbol, date, freq, e)
             retry -= 1
