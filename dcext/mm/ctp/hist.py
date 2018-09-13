@@ -26,10 +26,10 @@ def history(host, db, symbols, api, trade_days, freqs, max=1000):
         else:
             dates = find(trade_days, date2int(datetime.now()))
             data = create(api, symbol, dates, freq, max)
-        data["flag"] = 1
         for doc in data.to_dict("record"):
             doc["datetime"] = doc["datetime"].strftime("%Y%m%d %H:%M:%S")
-            doc["volume"] = int(doc["volume"])
+            for key in ["volume", "init_volume", "last_volume", "flag"]:
+                doc[key] = int(doc[key])
             storage.put(table, doc)
         
         logging.warning("reload | %s | %s", symbol, freq)
@@ -94,14 +94,19 @@ def get_bar(api, symbol, trade_date, freq, **kwargs):
         freq, grouper = FREQ_REDIRECT[freq]
         data = get_bar(api, symbol, trade_date, freq, **kwargs)
         return data.groupby(data["datetime"].apply(grouper)).agg(
-            {"open": "first", "high": "max", "low": "min", "close": "last", "volume": "sum"}
+            {"open": "first", "high": "max", "low": "min", "close": "last", "volume": "sum", "flag": "last"}
         ).reset_index()
 
     data, msg = api.bar(symbol, trade_date=trade_date, freq=freq, **kwargs)
 
     if msg == "0,":
-        data["datetime"] = list(map(grouper, map(make_time, data["date"], data['time'])))
-        return data[["datetime", "open", "high", "low", "close", "volume"]]
+        data["datetime"] = list(map(make_time, data["date"], data['time']))
+        data["flag"] = 1
+        if len(data):
+            if data["datetime"].iloc[-1] > datetime.now():
+                data["flag"].iloc[-1] = 0
+        data["datetime"] = data["datetime"].apply(grouper)
+        return data[["datetime", "open", "high", "low", "close", "volume", "flag"]]
     else:
         raise Exception(msg)
 
