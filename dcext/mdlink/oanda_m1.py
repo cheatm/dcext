@@ -82,6 +82,9 @@ class MongodbStorage(object):
             logging.warning("ensure table | %s | unique index datetime created", instrument)
         else:
             logging.warning("ensure table | %s | unique index datetime exists", instrument)
+        if "date_1" not in info:
+            collection.create_index("date", background=True) 
+            logging.warning("ensure table | %s | index date created", instrument)
     
     @staticmethod
     def drop_dups(collection):

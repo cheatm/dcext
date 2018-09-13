@@ -113,6 +113,8 @@ def bars(api, symbol, trade_days, freq, retry=3):
         date = trade_days[point]
         try:
             data = get_bar(api, symbol, date, freq)
+            data["last_volume"] = data["volume"].cumsum()
+            data["init_volume"] = data["last_volume"].shift(1).fillna(0)
             data = data[data["datetime"].apply(partial(env.is_trade_time, symbol))]
             yield data
         except Exception as e:
